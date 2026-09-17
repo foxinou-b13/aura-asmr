@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Moon, Clock, Sparkles, Check, Play, Pause, EyeOff } from 'lucide-react';
+import { X, Moon, Clock, EyeOff } from 'lucide-react';
 
 export default function SleepTimerModal({ 
   isOpen, 
@@ -7,7 +7,6 @@ export default function SleepTimerModal({
   soundEngine, 
   sleepRemaining, 
   setSleepRemaining,
-  onUiClick,
   toggleOledMode 
 }) {
   const [selectedMinutes, setSelectedMinutes] = useState(30);
@@ -15,7 +14,6 @@ export default function SleepTimerModal({
   if (!isOpen) return null;
 
   const handleStartTimer = (mins) => {
-    onUiClick?.('tingle');
     setSelectedMinutes(mins);
     soundEngine.startSleepTimer(
       mins,
@@ -29,7 +27,6 @@ export default function SleepTimerModal({
   };
 
   const handleCancelTimer = () => {
-    onUiClick?.('click');
     soundEngine.cancelSleepTimer();
     setSleepRemaining(null);
     onClose();
@@ -50,7 +47,7 @@ export default function SleepTimerModal({
 
         {/* Close */}
         <button
-          onClick={() => { onUiClick?.('click'); onClose(); }}
+          onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
@@ -61,7 +58,7 @@ export default function SleepTimerModal({
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 flex items-center justify-center mx-auto text-xl">
             <Moon className="w-6 h-6 animate-pulse text-indigo-400" />
           </div>
-          <h3 className="text-xl font-bold text-white font-heading">Minuteur de Sommeil Intelligent</h3>
+          <h3 className="text-xl font-bold text-white font-heading">Minuteur de Sommeil</h3>
           <p className="text-xs text-slate-400">
             Le son diminuera en douceur sur la dernière minute pour t'endormir paisiblement.
           </p>
@@ -103,7 +100,6 @@ export default function SleepTimerModal({
         <div className="pt-2 border-t border-white/10">
           <button
             onClick={() => {
-              onUiClick?.('click');
               toggleOledMode();
               onClose();
             }}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Volume2, VolumeX, Sparkles, Moon, Radio, Mic, Flame, 
-  User, Headphones, Sliders, Bell
+  User, Headphones, Sliders
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -12,8 +12,7 @@ export default function Navbar({
   openVipModal, 
   openSleepModal, 
   sleepRemaining,
-  isRecordingActive,
-  onUiClick
+  isRecordingActive
 }) {
   const formatSleepTime = (seconds) => {
     if (!seconds) return null;
@@ -30,7 +29,7 @@ export default function Navbar({
           
           {/* Logo & Brand */}
           <div 
-            onClick={() => { onUiClick?.(); setCurrentTab('feed'); }}
+            onClick={() => setCurrentTab('feed')}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
             <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 via-cyan-400 to-indigo-500 p-[1.5px] shadow-lg shadow-teal-500/20 group-hover:scale-105 transition-transform">
@@ -48,7 +47,7 @@ export default function Navbar({
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 -mt-0.5 font-medium hidden sm:block">
-                Le réseau social sensoriel 3D
+                Le réseau social des vrais vocaux sensoriels
               </p>
             </div>
           </div>
@@ -56,7 +55,7 @@ export default function Navbar({
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 bg-white/[0.04] p-1.5 rounded-2xl border border-white/5">
             <button
-              onClick={() => { onUiClick?.(); setCurrentTab('feed'); }}
+              onClick={() => setCurrentTab('feed')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 currentTab === 'feed'
                   ? 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
@@ -68,7 +67,7 @@ export default function Navbar({
             </button>
 
             <button
-              onClick={() => { onUiClick?.(); setCurrentTab('mixer'); }}
+              onClick={() => setCurrentTab('mixer')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 currentTab === 'mixer'
                   ? 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
@@ -76,11 +75,11 @@ export default function Navbar({
               }`}
             >
               <Sliders className="w-4 h-4" />
-              Mixer 3D Binaural
+              Mixeur d'Ambiance 3D
             </button>
 
             <button
-              onClick={() => { onUiClick?.(); setCurrentTab('studio'); }}
+              onClick={() => setCurrentTab('studio')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 currentTab === 'studio'
                   ? 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
@@ -97,7 +96,7 @@ export default function Navbar({
             </button>
 
             <button
-              onClick={() => { onUiClick?.(); setCurrentTab('profile'); }}
+              onClick={() => setCurrentTab('profile')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                 currentTab === 'profile'
                   ? 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
@@ -113,7 +112,7 @@ export default function Navbar({
           <div className="flex items-center gap-2.5">
             {/* Sleep Timer button */}
             <button
-              onClick={() => { onUiClick?.(); openSleepModal(); }}
+              onClick={openSleepModal}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
                 sleepRemaining 
                   ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-md shadow-indigo-500/10 animate-pulse'
@@ -129,7 +128,7 @@ export default function Navbar({
 
             {/* Master Audio Mute Toggle */}
             <button
-              onClick={() => { onUiClick?.(); toggleMute(); }}
+              onClick={toggleMute}
               className={`p-2 rounded-xl text-xs border transition-all ${
                 isMuted 
                   ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
@@ -142,7 +141,7 @@ export default function Navbar({
 
             {/* VIP Diamond Upgrade CTA */}
             <button
-              onClick={() => { onUiClick?.('tingle'); openVipModal(); }}
+              onClick={openVipModal}
               className="relative group overflow-hidden px-3.5 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 via-rose-500 to-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.03] transition-all"
             >
               <div className="flex items-center gap-1.5 font-semibold text-slate-950">
@@ -159,7 +158,7 @@ export default function Navbar({
       <div className="fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-md md:hidden">
         <div className="glass-panel rounded-2xl p-1.5 shadow-2xl border border-white/15 flex items-center justify-between">
           <button
-            onClick={() => { onUiClick?.(); setCurrentTab('feed'); }}
+            onClick={() => setCurrentTab('feed')}
             className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
               currentTab === 'feed' 
                 ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' 
@@ -171,7 +170,7 @@ export default function Navbar({
           </button>
 
           <button
-            onClick={() => { onUiClick?.(); setCurrentTab('mixer'); }}
+            onClick={() => setCurrentTab('mixer')}
             className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
               currentTab === 'mixer' 
                 ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' 
@@ -179,11 +178,11 @@ export default function Navbar({
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span>Mixer 3D</span>
+            <span>Mixeur 3D</span>
           </button>
 
           <button
-            onClick={() => { onUiClick?.(); setCurrentTab('studio'); }}
+            onClick={() => setCurrentTab('studio')}
             className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
               currentTab === 'studio' 
                 ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' 
@@ -200,7 +199,7 @@ export default function Navbar({
           </button>
 
           <button
-            onClick={() => { onUiClick?.(); setCurrentTab('profile'); }}
+            onClick={() => setCurrentTab('profile')}
             className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 text-[10px] font-semibold transition-all ${
               currentTab === 'profile' 
                 ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30' 

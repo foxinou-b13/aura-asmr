@@ -5,14 +5,13 @@ import {
 } from 'lucide-react';
 import { VIP_PERKS } from '../data/mockData';
 
-export default function VIPModal({ isOpen, onClose, onUiClick }) {
+export default function VIPModal({ isOpen, onClose }) {
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [subscribed, setSubscribed] = useState(false);
 
   if (!isOpen) return null;
 
   const handleSubscribe = () => {
-    onUiClick?.('tingle');
     setSubscribed(true);
     setTimeout(() => {
       alert("Félicitations ! Ton Pass VIP Diamant est activé.");
@@ -31,7 +30,7 @@ export default function VIPModal({ isOpen, onClose, onUiClick }) {
 
         {/* Close Button */}
         <button
-          onClick={() => { onUiClick?.('click'); onClose(); }}
+          onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
@@ -49,11 +48,11 @@ export default function VIPModal({ isOpen, onClose, onUiClick }) {
           </h2>
 
           <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto">
-            Sans charabia : zéro publicité, lecture automatique sans coupure pour s'endormir et visibilité maximale sur tes créations.
+            Sans charabia : zéro publicité, lecture continue sans coupure pour s'endormir et visibilité maximale sur tes créations.
           </p>
         </div>
 
-        {/* 6 Clear Benefits Grid (0 Jargon) */}
+        {/* 6 Clear Benefits Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-6">
           {VIP_PERKS.map((perk, idx) => (
             <div 
@@ -76,7 +75,7 @@ export default function VIPModal({ isOpen, onClose, onUiClick }) {
         {/* Plan Selector */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div 
-            onClick={() => { onUiClick?.('tap'); setSelectedPlan('monthly'); }}
+            onClick={() => setSelectedPlan('monthly')}
             className={`p-4 rounded-2xl border cursor-pointer transition-all ${
               selectedPlan === 'monthly'
                 ? 'bg-amber-500/20 border-amber-400 text-white shadow-md shadow-amber-500/20'
@@ -89,7 +88,7 @@ export default function VIPModal({ isOpen, onClose, onUiClick }) {
           </div>
 
           <div 
-            onClick={() => { onUiClick?.('tap'); setSelectedPlan('annual'); }}
+            onClick={() => setSelectedPlan('annual')}
             className={`p-4 rounded-2xl border cursor-pointer transition-all relative ${
               selectedPlan === 'annual'
                 ? 'bg-gradient-to-br from-amber-500/25 to-rose-500/20 border-amber-400 text-white shadow-lg shadow-amber-500/25'

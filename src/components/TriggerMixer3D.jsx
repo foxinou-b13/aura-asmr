@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Sliders, Volume2, VolumeX, Sparkles, RefreshCw, Moon, 
-  Play, Pause, Compass, Zap, Flame, Info
+  Sliders, Volume2, VolumeX, Sparkles, Moon, 
+  Play, Pause, Compass, Info
 } from 'lucide-react';
 import { AMBIENT_CHANNELS, SOUNDBOARD_PRESETS } from '../data/mockData';
 
 export default function TriggerMixer3D({ 
   soundEngine, 
-  openSleepModal, 
-  onUiClick 
+  openSleepModal
 }) {
   const [volumes, setVolumes] = useState({
     rain: 0,
@@ -29,14 +28,11 @@ export default function TriggerMixer3D({
   });
 
   const [activePreset, setActivePreset] = useState(null);
-  const [isMasterActive, setIsMasterActive] = useState(false);
 
-  // Sync with audio engine
   const handleVolumeChange = (id, newVol) => {
     const val = parseFloat(newVol);
     setVolumes(prev => ({ ...prev, [id]: val }));
     soundEngine.setAmbientChannel(id, val, pans[id] || 0);
-    setIsMasterActive(Object.values({ ...volumes, [id]: val }).some(v => v > 0));
   };
 
   const handlePanChange = (id, newPan) => {
@@ -48,11 +44,9 @@ export default function TriggerMixer3D({
   };
 
   const applyPreset = (preset) => {
-    onUiClick?.('tingle');
     setActivePreset(preset.id);
     const newVols = { ...preset.volumes };
     setVolumes(newVols);
-    setIsMasterActive(true);
 
     Object.keys(newVols).forEach(id => {
       soundEngine.setAmbientChannel(id, newVols[id], pans[id] || 0);
@@ -60,7 +54,6 @@ export default function TriggerMixer3D({
   };
 
   const stopAll = () => {
-    onUiClick?.('pop');
     soundEngine.stopAllAmbient();
     setVolumes({
       rain: 0,
@@ -71,7 +64,6 @@ export default function TriggerMixer3D({
       bowl: 0
     });
     setActivePreset(null);
-    setIsMasterActive(false);
   };
 
   const activeCount = Object.values(volumes).filter(v => v > 0).length;
@@ -85,13 +77,13 @@ export default function TriggerMixer3D({
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-semibold mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Studio de Mixage 3D Binaural</span>
+              <span>Studio d'Ambiance 3D</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-white font-heading">
-              Crée ton ambiance ASMR sur-mesure
+              Mixe ton fond sonore relaxant
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Superpose plusieurs sons simultanément, ajuste le volume et la position 3D dans tes oreilles.
+              Superpose la pluie, le bois et les vagues avec un réglage stéréo 3D gauche/droite.
             </p>
           </div>
 
@@ -108,7 +100,7 @@ export default function TriggerMixer3D({
             )}
 
             <button
-              onClick={() => { onUiClick?.(); openSleepModal(); }}
+              onClick={openSleepModal}
               className="px-3.5 py-2 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold hover:bg-indigo-500/25 transition-all flex items-center gap-1.5"
             >
               <Moon className="w-3.5 h-3.5" />
@@ -120,7 +112,7 @@ export default function TriggerMixer3D({
         {/* 1-Click Mood Presets */}
         <div className="pt-4">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2.5">
-            Ambiance express en 1 clic :
+            Ambiances pré-réglées :
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {SOUNDBOARD_PRESETS.map((preset) => (
@@ -170,10 +162,7 @@ export default function TriggerMixer3D({
                 </div>
 
                 <button
-                  onClick={() => {
-                    onUiClick?.('pop');
-                    handleVolumeChange(channel.id, isChannelActive ? 0 : (channel.defaultVol || 0.6));
-                  }}
+                  onClick={() => handleVolumeChange(channel.id, isChannelActive ? 0 : (channel.defaultVol || 0.6))}
                   className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                     isChannelActive 
                       ? 'bg-teal-400 text-slate-950 shadow-md shadow-teal-400/30' 
@@ -228,11 +217,11 @@ export default function TriggerMixer3D({
         })}
       </div>
 
-      {/* Reassurance Footer */}
+      {/* Info */}
       <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3 text-xs text-slate-400">
         <Info className="w-4 h-4 text-teal-400 shrink-0" />
         <span>
-          <strong>Astuce confort :</strong> Les sons sont synthétisés en direct dans ton navigateur avec une spatialisation binaurale. Utilise des écouteurs pour ressentir la séparation 3D à gauche et à droite.
+          <strong>Conseil d'écoute :</strong> Branche tes écouteurs pour percevoir le son en 3D binaural gauche et droite.
         </span>
       </div>
     </div>

@@ -13,9 +13,7 @@ export default function HeroQuickPlay({
   activeTrigger, 
   onToggleTrigger, 
   onOpenMixer, 
-  onOpenStudio, 
-  onOpenVip,
-  onUiClick 
+  onOpenStudio
 }) {
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#111420] via-[#0D101A] to-[#080A10] p-6 sm:p-8 shadow-2xl mb-8">
@@ -29,7 +27,7 @@ export default function HeroQuickPlay({
         <div className="space-y-2 max-w-xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-semibold tracking-wide">
             <Zap className="w-3.5 h-3.5 fill-teal-300" />
-            <span>Comprends en 5 secondes</span>
+            <span>100% Sons Réels & Communauté Humaine</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white font-heading">
@@ -37,19 +35,19 @@ export default function HeroQuickPlay({
           </h1>
 
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Pas d'inscription compliquée, pas de pub qui hurle. Clique sur un son ci-dessous pour tester l'immersion sonore en direct dans ton casque.
+            Pas d'inscription forcée, pas de pub qui hurle. Clique sur une ambiance ci-dessous pour tester l'immersion sonore en direct dans ton casque, ou enregistre ta propre voix.
           </p>
 
           {/* 3 Quick Value Badges */}
           <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-slate-300">
             <span className="flex items-center gap-1.5 text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-teal-400" /> 100% Gratuit & Illimité
+              <CheckCircle2 className="w-4 h-4 text-teal-400" /> 100% Humain & Réel
             </span>
             <span className="flex items-center gap-1.5 text-slate-300">
               <Headphones className="w-4 h-4 text-cyan-400" /> Audio Spatial 3D
             </span>
             <span className="flex items-center gap-1.5 text-slate-300">
-              <Sparkles className="w-4 h-4 text-amber-400" /> Sons Réels Synthétisés
+              <Sparkles className="w-4 h-4 text-amber-400" /> Micro Studio Intégré
             </span>
           </div>
         </div>
@@ -57,33 +55,33 @@ export default function HeroQuickPlay({
         {/* Right CTA Group */}
         <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 w-full md:w-auto shrink-0">
           <button
-            onClick={() => { onUiClick?.('tingle'); onOpenMixer(); }}
+            onClick={onOpenMixer}
             className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 font-bold text-sm shadow-lg shadow-teal-500/25 transition-all transform active:scale-95"
           >
             <Sliders className="w-4 h-4" />
-            <span>Mixer 3D Sur-Mesure</span>
+            <span>Mixeur d'Ambiance 3D</span>
             <ArrowRight className="w-4 h-4 ml-1" />
           </button>
 
           <button
-            onClick={() => { onUiClick?.(); onOpenStudio(); }}
+            onClick={onOpenStudio}
             className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 font-semibold text-xs transition-all"
           >
             <Mic className="w-4 h-4 text-rose-400" />
-            <span>Enregistrer un Vocal ASMR</span>
+            <span>Enregistrer un Vrai Vocal</span>
           </button>
         </div>
       </div>
 
-      {/* 5 Instant Launchpads (CLARITÉ & RYTHME) */}
+      {/* 5 Instant Launchpads */}
       <div className="relative z-10 pt-6">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Headphones className="w-3.5 h-3.5 text-teal-400" /> Teste un déclencheur en 1 clic :
+            <Headphones className="w-3.5 h-3.5 text-teal-400" /> Ambiances sonores immédiates :
           </span>
           {activeTrigger && (
             <span className="text-xs font-medium text-teal-300 flex items-center gap-1.5 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-teal-400" /> Son en cours de lecture
+              <span className="w-2 h-2 rounded-full bg-teal-400" /> Ambiance en cours de lecture
             </span>
           )}
         </div>
@@ -94,10 +92,7 @@ export default function HeroQuickPlay({
             return (
               <button
                 key={sound.id}
-                onClick={() => {
-                  onUiClick?.('pop');
-                  onToggleTrigger(sound.id);
-                }}
+                onClick={() => onToggleTrigger(sound.id)}
                 className={`relative group p-3.5 rounded-2xl border text-left transition-all duration-200 overflow-hidden ${
                   isPlaying 
                     ? `bg-gradient-to-br ${sound.bg} ${sound.border} shadow-lg shadow-teal-500/20 scale-[1.02]` 
