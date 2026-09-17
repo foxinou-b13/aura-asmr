@@ -1,4 +1,4 @@
-// Cross-platform Audio Recorder for real human microphone recordings (iOS, Safari, Android, Chrome)
+// Universal Cross-Platform Audio Recorder (iOS Safari, Android Chrome, Mac, Windows, AirPods, USB mics)
 
 export class RealAudioRecorder {
   constructor() {
@@ -12,51 +12,56 @@ export class RealAudioRecorder {
     this.mimeType = '';
   }
 
-  // Get optimal supported audio MIME type across all mobile and desktop browsers
-  getSupportedMimeType() {
-    const types = [
-      'audio/webm;codecs=opus',
-      'audio/webm',
+  // Get best supported audio format for the current device
+  getBestMimeType() {
+    const candidateTypes = [
       'audio/mp4',
       'audio/aac',
+      'audio/webm;codecs=opus',
+      'audio/webm',
       'audio/ogg;codecs=opus',
       'audio/wav'
     ];
-    for (const type of types) {
+    for (const type of candidateTypes) {
       if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
         return type;
       }
     }
-    return ''; // fallback to browser default
+    return '';
   }
 
-  async start(onAudioData) {
+  async start() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("L'accès au microphone n'est pas supporté par ce navigateur.");
+      throw new Error("L'accès au microphone n'est pas disponible sur ce navigateur.");
     }
 
     this.audioChunks = [];
+    
+    // Request highest compatibility audio stream from any input device (AirPods, internal mic, USB headset)
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: false,
         noiseSuppression: false,
-        autoGainControl: false
+        autoGainControl: true
       }
     });
 
-    // Audio context for real-time visualizer
+    // Real-time frequency analyzer for visual feedback
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioCtx();
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 256;
+      this.analyser.fftSize = 128;
       this.source.connect(this.analyser);
     } catch (e) {
-      console.warn("Analyser init:", e);
+      console.warn("AudioContext analyzer setup:", e);
     }
 
-    this.mimeType = this.getSupportedMimeType();
+    this.mimeType = this.getBestMimeType();
     const options = this.mimeType ? { mimeType: this.mimeType } : {};
 
     try {
@@ -71,7 +76,7 @@ export class RealAudioRecorder {
       }
     };
 
-    this.mediaRecorder.start(200); // 200ms slices for reliable recording
+    this.mediaRecorder.start(100); // chunk every 100ms
     this.isRecording = true;
   }
 
@@ -89,19 +94,19 @@ export class RealAudioRecorder {
         return;
       }
 
-      this.mediaRecorder.onstop = async () => {
+      this.mediaRecorder.onstop = () => {
         try {
-          const type = this.mimeType || (this.audioChunks[0] ? this.audioChunks[0].type : 'audio/webm');
-          const audioBlob = new Blob(this.audioChunks, { type: type || 'audio/webm' });
+          const type = this.mimeType || (this.audioChunks[0] ? this.audioChunks[0].type : 'audio/mp4');
+          const audioBlob = new Blob(this.audioChunks, { type: type || 'audio/mp4' });
           const blobUrl = URL.createObjectURL(audioBlob);
 
-          // Convert to Base64 for persistent storage
+          // Convert to Base64 data URI for reliable saving in localStorage
           const reader = new FileReader();
           reader.readAsDataURL(audioBlob);
           reader.onloadend = () => {
             const base64Data = reader.result;
 
-            // Stop all hardware tracks
+            // Clean up hardware streams
             if (this.stream) {
               this.stream.getTracks().forEach(track => track.stop());
             }

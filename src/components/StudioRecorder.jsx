@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Mic, Square, Play, Pause, Upload, Check, 
-  ArrowLeft, FileAudio, AlertCircle, RefreshCw
+  ArrowLeft, FileAudio, AlertCircle, RefreshCw, Volume2, Headphones
 } from 'lucide-react';
 import { RealAudioRecorder } from '../audio/recorder';
 
@@ -9,26 +9,27 @@ export default function StudioRecorder({
   onPublishPost, 
   onBackToFeed 
 }) {
+  const [step, setStep] = useState('record'); // 'record', 'review', 'published'
   const [isRecording, setIsRecording] = useState(false);
   const [recordDuration, setRecordDuration] = useState(0);
   const [audioResult, setAudioResult] = useState(null);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [previewProgress, setPreviewProgress] = useState(0);
   const [title, setTitle] = useState('');
   const [authorName, setAuthorName] = useState('');
   const [triggerType, setTriggerType] = useState('Chuchotements');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  const [publishSuccess, setPublishSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const recorderRef = useRef(null);
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
   const timerRef = useRef(null);
-  const previewAudioRef = useRef(null);
+  const audioPlayerRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Live visualizer drawing
+  // Canvas visualizer for live voice feedback
   const drawVisualizer = () => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -43,9 +44,10 @@ export default function StudioRecorder({
       let dataArray = recorderRef.current ? recorderRef.current.getFrequencyData() : null;
 
       if (isRecording && dataArray) {
-        const barWidth = (width / 32) * 0.8;
-        let x = 0;
-        for (let i = 0; i < 32; i++) {
+        const barCount = 28;
+        const barWidth = (width / barCount) * 0.7;
+        let x = 6;
+        for (let i = 0; i < barCount; i++) {
           const val = dataArray[i * 2] || 0;
           const barHeight = Math.max(4, (val / 255) * height * 0.9);
 
@@ -55,10 +57,9 @@ export default function StudioRecorder({
 
           ctx.fillStyle = gradient;
           ctx.fillRect(x, (height - barHeight) / 2, barWidth, barHeight);
-          x += barWidth + 4;
+          x += barWidth + 5;
         }
       } else {
-        // Flat resting line
         ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.fillRect(0, height / 2 - 1, width, 2);
       }
@@ -73,10 +74,10 @@ export default function StudioRecorder({
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
       if (recorderRef.current) recorderRef.current.cancel();
-      if (previewAudioRef.current) previewAudioRef.current.pause();
     };
   }, [isRecording]);
 
+  // Start recording on any device (phone, AirPods, USB, PC)
   const startRecording = async () => {
     setErrorMessage('');
     setAudioResult(null);
@@ -94,12 +95,13 @@ export default function StudioRecorder({
         setRecordDuration(prev => prev + 1);
       }, 1000);
     } catch (err) {
-      console.error("Microphone error:", err);
-      setErrorMessage("Impossible d'accéder à ton micro. Vérifie que tu as accordé l'autorisation au navigateur.");
+      console.error("Microphone access error:", err);
+      setErrorMessage("Impossible d'accéder au micro. Vérifie que tu as bien autorisé le micro dans ton navigateur.");
       setIsRecording(false);
     }
   };
 
+  // Stop recording and move to review step
   const stopRecording = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setIsRecording(false);
@@ -107,16 +109,18 @@ export default function StudioRecorder({
     if (recorderRef.current) {
       try {
         const result = await recorderRef.current.stop();
-        if (result) {
+        if (result && (result.blobUrl || result.base64)) {
           setAudioResult(result);
+          setStep('review');
         }
       } catch (err) {
         console.error("Stop recording error:", err);
-        setErrorMessage("Une erreur est survenue lors de l'enregistrement de l'audio.");
+        setErrorMessage("Une erreur est survenue lors de la sauvegarde de l'enregistrement.");
       }
     }
   };
 
+  // File upload from device
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -131,43 +135,64 @@ export default function StudioRecorder({
         base64: reader.result,
         mimeType: file.type || 'audio/mp3'
       });
-      setRecordDuration(60);
+      setRecordDuration(45);
+      setStep('review');
     };
   };
 
-  const togglePreview = () => {
-    if (!audioResult || !audioResult.blobUrl) return;
+  // Preview Player controls
+  const togglePreviewPlay = () => {
+    if (!audioPlayerRef.current) return;
 
     if (isPlayingPreview) {
-      if (previewAudioRef.current) {
-        previewAudioRef.current.pause();
-      }
+      audioPlayerRef.current.pause();
       setIsPlayingPreview(false);
     } else {
-      if (!previewAudioRef.current) {
-        previewAudioRef.current = new Audio(audioResult.blobUrl);
-        previewAudioRef.current.onended = () => setIsPlayingPreview(false);
-      } else {
-        previewAudioRef.current.src = audioResult.blobUrl;
-      }
-      previewAudioRef.current.play().catch(() => setIsPlayingPreview(false));
-      setIsPlayingPreview(true);
+      audioPlayerRef.current.play()
+        .then(() => setIsPlayingPreview(true))
+        .catch(err => {
+          console.warn("Playback error:", err);
+          setIsPlayingPreview(false);
+        });
     }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioPlayerRef.current && audioPlayerRef.current.duration) {
+      const current = audioPlayerRef.current.currentTime;
+      setPreviewProgress(current);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlayingPreview(false);
+    setPreviewProgress(0);
+  };
+
+  const resetRecording = () => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+    }
+    setAudioResult(null);
+    setIsPlayingPreview(false);
+    setRecordDuration(0);
+    setStep('record');
   };
 
   const formatDuration = (secs) => {
     const m = Math.floor(secs / 60);
-    const s = secs % 60;
+    const s = Math.floor(secs % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  // Publish final vocal to feed
   const handlePublish = () => {
     if (!title.trim()) {
-      alert("Ajoute un petit titre ou une description pour ton vocal !");
+      alert("Ajoute un titre à ton vocal pour le publier !");
       return;
     }
     if (!audioResult || (!audioResult.base64 && !audioResult.blobUrl)) {
-      alert("Enregistre un son au micro ou importe un fichier audio avant de publier.");
+      alert("Aucun audio valide à publier.");
       return;
     }
 
@@ -201,26 +226,26 @@ export default function StudioRecorder({
         isVipExclusive: false,
         isFeatured: false,
         audioUrl: audioData,
-        waveform: [25, 45, 70, 85, 60, 40, 75, 90, 65, 50, 80, 95, 70, 55, 40, 65, 80, 60, 45, 30, 20],
+        waveform: [20, 40, 65, 80, 55, 35, 70, 85, 60, 45, 75, 90, 65, 50, 40, 60, 75, 55, 40, 25, 20],
         tags: [`#${triggerType.toLowerCase().replace(/\s+/g, '')}`, "#asmr_humain", "#vrai_vocal"],
-        description: `Vocal ASMR réel enregistré au micro par ${displayName}.`,
+        description: `Vocal ASMR authentique enregistré au micro par ${displayName}.`,
         comments: []
       };
 
       onPublishPost(newPost);
       setIsPublishing(false);
-      setPublishSuccess(true);
+      setStep('published');
 
       setTimeout(() => {
         onBackToFeed();
-      }, 1000);
+      }, 1200);
     }, 400);
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       
-      {/* Header */}
+      {/* Top Header */}
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <button
           onClick={onBackToFeed}
@@ -231,7 +256,7 @@ export default function StudioRecorder({
         </button>
 
         <span className="text-xs text-teal-400 font-semibold">
-          Enregistrement Réel au Micro
+          Studio d'Enregistrement Réel
         </span>
       </div>
 
@@ -242,23 +267,35 @@ export default function StudioRecorder({
         </div>
       )}
 
-      {publishSuccess ? (
-        <div className="glass-panel rounded-3xl p-10 text-center space-y-3 border border-teal-500/40">
+      {/* Step 3: Success Confirmation */}
+      {step === 'published' && (
+        <div className="glass-panel rounded-3xl p-10 text-center space-y-3 border border-teal-500/40 animate-in fade-in">
           <div className="w-14 h-14 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 flex items-center justify-center mx-auto text-xl">
             <Check className="w-7 h-7 text-teal-400" />
           </div>
           <h2 className="text-xl font-bold text-white font-heading">Vocal publié avec succès !</h2>
           <p className="text-xs text-slate-300 max-w-sm mx-auto">
-            Ton enregistrement est maintenant disponible pour tous les membres sur le fil d'actualité.
+            Ton vocal est maintenant disponible sur le fil d'actualité. Redirection...
           </p>
         </div>
-      ) : (
-        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 space-y-5">
+      )}
+
+      {/* Step 1: Recording Stage */}
+      {step === 'record' && (
+        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/10 space-y-6">
           
-          {/* Visualizer Canvas & Record Controls */}
-          <div className="rounded-2xl bg-[#0B0E17] border border-white/5 p-6 flex flex-col items-center justify-center space-y-4 relative overflow-hidden">
+          <div className="text-center space-y-1">
+            <h2 className="text-lg font-bold text-white font-heading">
+              Enregistre ton vocal ASMR
+            </h2>
+            <p className="text-xs text-slate-400">
+              Compatible avec tous les appareils (smartphone, écouteurs, micro USB ou micro PC).
+            </p>
+          </div>
+
+          {/* Visualizer Box */}
+          <div className="rounded-2xl bg-[#0B0E17] border border-white/5 p-6 flex flex-col items-center justify-center space-y-4">
             
-            {/* Real Audio Oscilloscope Canvas */}
             <div className="w-full h-20 flex items-center justify-center relative">
               <canvas 
                 ref={canvasRef} 
@@ -266,33 +303,32 @@ export default function StudioRecorder({
                 height={80} 
                 className="w-full h-full object-contain"
               />
-              {!isRecording && !audioResult && (
+              {!isRecording && (
                 <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 font-medium">
-                  Appuie sur le bouton rouge pour enregistrer ta voix
+                  Appuie sur le micro ci-dessous pour parler
                 </div>
               )}
             </div>
 
-            {/* Timer */}
             <div className="text-center">
               <div className="font-mono text-3xl font-bold text-white tracking-wider">
                 {formatDuration(recordDuration)}
               </div>
-              <div className="text-[11px] text-slate-400 mt-1">
-                {isRecording ? "Enregistrement en cours..." : audioResult ? "Audio prêt à être publié" : "Prêt à enregistrer"}
+              <div className="text-[11px] text-slate-400 mt-0.5">
+                {isRecording ? "Enregistrement en cours..." : "Micro prêt"}
               </div>
             </div>
 
-            {/* Record / Stop / Upload Controls */}
+            {/* Action Buttons */}
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               {!isRecording ? (
                 <>
                   <button
                     onClick={startRecording}
-                    className="flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-bold text-xs shadow-xl shadow-rose-500/30 hover:scale-105 active:scale-95 transition-all"
+                    className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500 text-white font-bold text-xs shadow-xl shadow-rose-500/30 hover:scale-105 active:scale-95 transition-all"
                   >
                     <Mic className="w-4 h-4" />
-                    <span>{audioResult ? 'Réenregistrer' : 'Enregistrer au Micro'}</span>
+                    <span>Démarrer l'enregistrement</span>
                   </button>
 
                   <input
@@ -304,37 +340,99 @@ export default function StudioRecorder({
                   />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition-all"
+                    className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold transition-all"
                   >
                     <FileAudio className="w-4 h-4 text-teal-400" />
-                    <span>Fichier audio</span>
+                    <span>Importer un fichier audio</span>
                   </button>
                 </>
               ) : (
                 <button
                   onClick={stopRecording}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-xs shadow-xl hover:scale-105 active:scale-95 transition-all animate-pulse"
+                  className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-xs shadow-xl hover:scale-105 active:scale-95 transition-all animate-pulse"
                 >
                   <Square className="w-4 h-4 fill-slate-950" />
-                  <span>Arrêter l'enregistrement</span>
-                </button>
-              )}
-
-              {/* Preview Button */}
-              {audioResult && !isRecording && (
-                <button
-                  onClick={togglePreview}
-                  className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs font-bold transition-all"
-                >
-                  {isPlayingPreview ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
-                  <span>{isPlayingPreview ? 'Pause' : 'Écouter l’audio'}</span>
+                  <span>Arrêter & Réécouter mon vocal</span>
                 </button>
               )}
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Form Fields: Pseudo & Title */}
-          <div className="space-y-4 pt-1">
+      {/* Step 2: Review & Listen before Publishing (IMPOSSIBLE TO MISS) */}
+      {step === 'review' && audioResult && (
+        <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-teal-500/30 space-y-6 animate-in fade-in">
+          
+          {/* Header */}
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-teal-400 flex items-center justify-center gap-1.5">
+              <Headphones className="w-4 h-4" /> Écoute ton vocal avant de le publier
+            </span>
+            <h2 className="text-lg font-bold text-white font-heading">
+              Vérifie la qualité de ton son
+            </h2>
+          </div>
+
+          {/* Dedicated Audio Player Box */}
+          <div className="rounded-2xl bg-[#0B0E17] border border-white/10 p-5 space-y-4 shadow-lg">
+            
+            {/* Hidden native audio element for bulletproof playback */}
+            <audio
+              ref={audioPlayerRef}
+              src={audioResult.blobUrl}
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={handleAudioEnded}
+              preload="auto"
+            />
+
+            {/* Custom Visual Player */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={togglePreviewPlay}
+                className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-400 to-cyan-400 text-slate-950 flex items-center justify-center shadow-lg shadow-teal-500/25 shrink-0 hover:scale-105 transition-all"
+              >
+                {isPlayingPreview ? (
+                  <Pause className="w-6 h-6 fill-current" />
+                ) : (
+                  <Play className="w-6 h-6 fill-current ml-0.5" />
+                )}
+              </button>
+
+              <div className="flex-1 space-y-1.5">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-teal-300">
+                    {isPlayingPreview ? "Lecture de ton enregistrement..." : "Prêt pour écoute"}
+                  </span>
+                  <span className="font-mono text-slate-400">
+                    {formatDuration(previewProgress)} / {formatDuration(recordDuration)}
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-100"
+                    style={{ width: `${recordDuration > 0 ? (previewProgress / recordDuration) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Re-record button */}
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={resetRecording}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Ce son ne me plaît pas : Réenregistrer</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Form Fields: Details */}
+          <div className="space-y-4 pt-2">
             {!isAnonymous && (
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
@@ -342,7 +440,7 @@ export default function StudioRecorder({
                 </label>
                 <input
                   type="text"
-                  placeholder="ex: Alex_ASMR, Sarah, Nino..."
+                  placeholder="ex: Alex_ASMR, Sophie, Nico..."
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
                   className="w-full bg-[#101422] rounded-2xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 border border-white/10 focus:border-teal-500/60 focus:outline-none"
@@ -352,11 +450,11 @@ export default function StudioRecorder({
 
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
-                Titre du vocal :
+                Titre de ton vocal :
               </label>
               <input
                 type="text"
-                placeholder="ex: Chuchotements doux, bruits de bouche, tapping sur livre..."
+                placeholder="ex: Chuchotements doux, bruits de bouche, tapping..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full bg-[#101422] rounded-2xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 border border-white/10 focus:border-teal-500/60 focus:outline-none"
@@ -389,7 +487,7 @@ export default function StudioRecorder({
             <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-xs">
               <div>
                 <span className="font-bold text-white">Publier en mode Anonyme</span>
-                <p className="text-[11px] text-slate-400">Ton nom ne sera pas affiché</p>
+                <p className="text-[11px] text-slate-400">Ton pseudo sera masqué sur le fil d'actualité</p>
               </div>
               <button
                 type="button"
@@ -405,19 +503,15 @@ export default function StudioRecorder({
             </div>
           </div>
 
-          {/* Publish CTA */}
+          {/* Final Validation & Publish Button */}
           <div className="pt-2 border-t border-white/10">
             <button
               onClick={handlePublish}
-              disabled={isPublishing || !audioResult}
-              className={`w-full py-3.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
-                audioResult
-                  ? 'bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-400 text-slate-950 shadow-xl shadow-teal-500/20 hover:scale-[1.01] active:scale-95'
-                  : 'bg-white/10 text-slate-500 cursor-not-allowed'
-              }`}
+              disabled={isPublishing}
+              className="w-full py-4 rounded-2xl font-bold text-xs bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-400 text-slate-950 shadow-xl shadow-teal-500/25 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <Upload className="w-4 h-4" />
-              <span>{isPublishing ? 'Publication...' : 'Publier mon vocal réel'}</span>
+              <span>{isPublishing ? 'Publication en cours...' : 'Valider & Publier mon vocal sur le fil'}</span>
             </button>
           </div>
         </div>
