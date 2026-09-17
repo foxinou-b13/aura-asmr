@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeroQuickPlay from './components/HeroQuickPlay';
 import FeedView from './components/FeedView';
-import TriggerMixer3D from './components/TriggerMixer3D';
 import StudioRecorder from './components/StudioRecorder';
 import ProfileView from './components/ProfileView';
 import VIPModal from './components/VIPModal';
 import SleepTimerModal from './components/SleepTimerModal';
 import TipModal from './components/TipModal';
 import { soundEngine } from './audio/soundEngine';
-import { Moon, Sparkles, Volume2, ShieldCheck, Heart, Radio } from 'lucide-react';
+import { Moon } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('feed');
   const [posts, setPosts] = useState(() => {
     try {
-      const saved = localStorage.getItem('aura_asmr_real_posts');
+      const saved = localStorage.getItem('aura_asmr_real_human_posts');
       return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
@@ -24,9 +23,7 @@ export default function App() {
 
   const [activePlayingId, setActivePlayingId] = useState(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
-  const [activeInstantTrigger, setActiveInstantTrigger] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(true);
   const [sleepRemaining, setSleepRemaining] = useState(null);
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [isSleepModalOpen, setIsSleepModalOpen] = useState(false);
@@ -34,46 +31,25 @@ export default function App() {
   const [selectedCreatorForTip, setSelectedCreatorForTip] = useState(null);
   const [isOledMode, setIsOledMode] = useState(false);
 
-  // Save posts to localStorage
+  // Save real posts to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('aura_asmr_real_posts', JSON.stringify(posts));
+      localStorage.setItem('aura_asmr_real_human_posts', JSON.stringify(posts));
     } catch (e) {}
   }, [posts]);
-
-  const handleUiClick = (type = 'click') => {
-    soundEngine.playUiSound(type);
-  };
 
   const toggleMute = () => {
     const muted = soundEngine.toggleMute();
     setIsMuted(muted);
   };
 
-  const toggleSoundEffects = () => {
-    const enabled = soundEngine.toggleSoundEffects();
-    setSoundEffectsEnabled(enabled);
-  };
-
-  // Instant trigger toggle in Hero section
-  const handleToggleInstantTrigger = (triggerId) => {
-    if (activeInstantTrigger === triggerId) {
-      soundEngine.stopAmbientChannel(triggerId);
-      setActiveInstantTrigger(null);
-    } else {
-      soundEngine.stopAllAmbient();
-      soundEngine.setAmbientChannel(triggerId, 0.7, 0);
-      setActiveInstantTrigger(triggerId);
-    }
-  };
-
-  // Play post from feed
+  // Play real human post from feed
   const handlePlayPost = (post) => {
     setActivePlayingId(post.id);
     setPlaybackProgress(0);
     soundEngine.playTrack(
       post,
-      (elapsed, total) => {
+      (elapsed) => {
         setPlaybackProgress(elapsed);
       },
       () => {
@@ -83,7 +59,7 @@ export default function App() {
     );
   };
 
-  const handlePausePost = (postId) => {
+  const handlePausePost = () => {
     soundEngine.stopTrack();
     setActivePlayingId(null);
     setPlaybackProgress(0);
@@ -96,10 +72,10 @@ export default function App() {
         return {
           ...p,
           comments: [
-            ...p.comments,
+            ...(p.comments || []),
             {
               id: Date.now(),
-              user: "Visiteur",
+              user: "Membre Réel",
               text: text,
               time: "À l'instant",
               avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
@@ -111,7 +87,7 @@ export default function App() {
     }));
   };
 
-  // Publish new post
+  // Publish new real post
   const handlePublishPost = (newPost) => {
     setPosts(prev => [newPost, ...prev]);
   };
@@ -128,18 +104,18 @@ export default function App() {
       {/* OLED Deep Black Screen Mode for Sleep */}
       {isOledMode && (
         <div 
-          onClick={() => { setIsOledMode(false); handleUiClick('tingle'); }}
-          className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center cursor-pointer p-6 select-none animate-in fade-in duration-300"
+          onClick={() => setIsOledMode(false)}
+          className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center cursor-pointer p-6 select-none"
         >
           <div className="text-center space-y-4">
-            <div className="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-3xl animate-pulse">
+            <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-2xl">
               🌙
             </div>
-            <h2 className="text-xl font-bold text-slate-300 font-heading">Mode Nuit Profonde OLED</h2>
+            <h2 className="text-lg font-bold text-slate-300 font-heading">Mode Nuit Profonde OLED</h2>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Écran éteint pour reposer tes yeux et préserver la batterie. L'audio continue en arrière-plan.
+              Écran éteint. L'audio de ton vocal continue en arrière-plan.
             </p>
-            <div className="text-[11px] text-teal-400/80 uppercase tracking-widest pt-4">
+            <div className="text-[10px] text-teal-400/80 uppercase tracking-widest pt-3">
               Toucher l'écran pour réveiller
             </div>
           </div>
@@ -156,26 +132,18 @@ export default function App() {
         openSleepModal={() => setIsSleepModalOpen(true)}
         sleepRemaining={sleepRemaining}
         isRecordingActive={currentTab === 'studio'}
-        onUiClick={handleUiClick}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6 sm:py-8 pb-24 md:pb-12">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 sm:py-8 pb-24 md:pb-12">
         
         {/* Feed Tab View */}
         {currentTab === 'feed' && (
           <div className="space-y-6">
-            {/* 5-Second Comprehension Hero Quick Play */}
             <HeroQuickPlay
-              activeTrigger={activeInstantTrigger}
-              onToggleTrigger={handleToggleInstantTrigger}
-              onOpenMixer={() => setCurrentTab('mixer')}
               onOpenStudio={() => setCurrentTab('studio')}
-              onOpenVip={() => setIsVipModalOpen(true)}
-              onUiClick={handleUiClick}
             />
 
-            {/* Social Feed List */}
             <FeedView
               posts={posts}
               activePlayingId={activePlayingId}
@@ -183,7 +151,6 @@ export default function App() {
               onPausePost={handlePausePost}
               playbackProgress={playbackProgress}
               openVipModal={() => setIsVipModalOpen(true)}
-              onUiClick={handleUiClick}
               onAddComment={handleAddComment}
               onTipCreator={handleOpenTipModal}
               onOpenStudio={() => setCurrentTab('studio')}
@@ -191,21 +158,10 @@ export default function App() {
           </div>
         )}
 
-        {/* 3D Mixer Tab View */}
-        {currentTab === 'mixer' && (
-          <TriggerMixer3D
-            soundEngine={soundEngine}
-            openSleepModal={() => setIsSleepModalOpen(true)}
-            onUiClick={handleUiClick}
-          />
-        )}
-
         {/* Studio Recorder Tab View */}
         {currentTab === 'studio' && (
           <StudioRecorder
             onPublishPost={handlePublishPost}
-            soundEngine={soundEngine}
-            onUiClick={handleUiClick}
             onBackToFeed={() => setCurrentTab('feed')}
           />
         )}
@@ -214,9 +170,6 @@ export default function App() {
         {currentTab === 'profile' && (
           <ProfileView
             openVipModal={() => setIsVipModalOpen(true)}
-            onUiClick={handleUiClick}
-            soundEffectsEnabled={soundEffectsEnabled}
-            toggleSoundEffects={toggleSoundEffects}
             onOpenStudio={() => setCurrentTab('studio')}
           />
         )}
@@ -226,7 +179,6 @@ export default function App() {
       <VIPModal
         isOpen={isVipModalOpen}
         onClose={() => setIsVipModalOpen(false)}
-        onUiClick={handleUiClick}
       />
 
       <SleepTimerModal
@@ -235,7 +187,6 @@ export default function App() {
         soundEngine={soundEngine}
         sleepRemaining={sleepRemaining}
         setSleepRemaining={setSleepRemaining}
-        onUiClick={handleUiClick}
         toggleOledMode={() => setIsOledMode(true)}
       />
 
@@ -243,7 +194,6 @@ export default function App() {
         isOpen={isTipModalOpen}
         onClose={() => setIsTipModalOpen(false)}
         creator={selectedCreatorForTip}
-        onUiClick={handleUiClick}
       />
 
       {/* Footer */}
@@ -251,11 +201,10 @@ export default function App() {
         <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-300 font-heading">AURA ASMR</span>
-            <span>· Le premier réseau sensoriel & sonore</span>
+            <span>· Le réseau social 100% humain</span>
           </div>
           <div className="flex items-center gap-4 text-slate-400 text-[11px]">
             <button onClick={() => setIsVipModalOpen(true)} className="hover:text-teal-300 transition-colors">Avantages VIP</button>
-            <button onClick={() => setCurrentTab('mixer')} className="hover:text-teal-300 transition-colors">Mixer 3D</button>
             <button onClick={() => setIsSleepModalOpen(true)} className="hover:text-teal-300 transition-colors">Minuteur Sommeil</button>
             <a href="#" className="hover:text-teal-300 transition-colors">Confidentialité</a>
           </div>
