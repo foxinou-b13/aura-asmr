@@ -97,7 +97,7 @@ export default function FeedView({
     if (filteredPosts.length > 0) {
       const randomIdx = Math.floor(Math.random() * filteredPosts.length);
       const randomPost = filteredPosts[randomIdx];
-      onPlayPost(randomPost.id);
+      onPlayPost(randomPost);
     }
   };
 
@@ -321,14 +321,14 @@ export default function FeedView({
                 {/* Audio Waveform Player Bar */}
                 <div className="p-4 rounded-2xl bg-[#090C14]/80 border border-white/5 mb-4 space-y-3">
                   <div className="flex items-center gap-4">
-                    {/* Play/Pause Button */}
-                    <button
-                      onClick={() => {
-                        onUiClick?.('pop');
-                        if (isPlaying) onPausePost(post.id);
-                        else onPlayPost(post.id);
-                      }}
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                      {/* Play/Pause Button */}
+                      <button
+                        onClick={() => {
+                          onUiClick?.('pop');
+                          if (isPlaying) onPausePost(post.id);
+                          else onPlayPost(post);
+                        }}
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
                         isPlaying 
                           ? 'bg-gradient-to-tr from-teal-400 to-cyan-400 text-slate-950 shadow-lg shadow-teal-400/30 scale-105' 
                           : 'bg-gradient-to-tr from-white/10 to-white/5 text-white hover:bg-white/20'

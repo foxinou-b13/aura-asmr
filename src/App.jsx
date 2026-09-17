@@ -54,11 +54,11 @@ export default function App() {
   };
 
   // Play post from feed
-  const handlePlayPost = (postId) => {
-    setActivePlayingId(postId);
+  const handlePlayPost = (post) => {
+    setActivePlayingId(post.id);
     setPlaybackProgress(0);
     soundEngine.playTrack(
-      postId,
+      post,
       (elapsed, total) => {
         setPlaybackProgress(elapsed);
       },
