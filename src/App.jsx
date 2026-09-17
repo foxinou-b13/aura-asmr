@@ -9,12 +9,19 @@ import VIPModal from './components/VIPModal';
 import SleepTimerModal from './components/SleepTimerModal';
 import TipModal from './components/TipModal';
 import { soundEngine } from './audio/soundEngine';
-import { MOCK_POSTS } from './data/mockData';
 import { Moon, Sparkles, Volume2, ShieldCheck, Heart, Radio } from 'lucide-react';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('feed');
-  const [posts, setPosts] = useState(MOCK_POSTS);
+  const [posts, setPosts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('aura_asmr_real_posts');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   const [activePlayingId, setActivePlayingId] = useState(null);
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [activeInstantTrigger, setActiveInstantTrigger] = useState(null);
@@ -26,6 +33,13 @@ export default function App() {
   const [isTipModalOpen, setIsTipModalOpen] = useState(false);
   const [selectedCreatorForTip, setSelectedCreatorForTip] = useState(null);
   const [isOledMode, setIsOledMode] = useState(false);
+
+  // Save posts to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('aura_asmr_real_posts', JSON.stringify(posts));
+    } catch (e) {}
+  }, [posts]);
 
   const handleUiClick = (type = 'click') => {
     soundEngine.playUiSound(type);
@@ -85,7 +99,7 @@ export default function App() {
             ...p.comments,
             {
               id: Date.now(),
-              user: "Toi",
+              user: "Visiteur",
               text: text,
               time: "À l'instant",
               avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
@@ -172,6 +186,7 @@ export default function App() {
               onUiClick={handleUiClick}
               onAddComment={handleAddComment}
               onTipCreator={handleOpenTipModal}
+              onOpenStudio={() => setCurrentTab('studio')}
             />
           </div>
         )}

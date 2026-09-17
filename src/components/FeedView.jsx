@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Play, Pause, Heart, MessageSquare, Share2, Sparkles, 
   Search, Flame, Zap, Award, Crown, Check, Send, Coffee,
-  Headphones, Bookmark, Shuffle, Filter, Volume2
+  Headphones, Bookmark, Shuffle, Filter, Volume2, Mic, Plus
 } from 'lucide-react';
 import { TRIGGER_CATEGORIES } from '../data/mockData';
 
@@ -15,7 +15,8 @@ export default function FeedView({
   openVipModal,
   onUiClick,
   onAddComment,
-  onTipCreator
+  onTipCreator,
+  onOpenStudio
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -28,26 +29,23 @@ export default function FeedView({
 
   // Filter posts based on category, tab, and search
   const filteredPosts = posts.filter(post => {
-    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchTitle = post.title.toLowerCase().includes(q);
-      const matchAuthor = post.author.name.toLowerCase().includes(q);
+      const matchTitle = post.title?.toLowerCase().includes(q);
+      const matchAuthor = post.author?.name?.toLowerCase().includes(q);
       const matchTag = post.tags?.some(t => t.toLowerCase().includes(q));
       if (!matchTitle && !matchAuthor && !matchTag) return false;
     }
 
-    // Category filter
     if (selectedCategory !== 'all') {
-      if (selectedCategory === 'sleep' && !post.trigger.toLowerCase().includes('sommeil') && !post.trigger.toLowerCase().includes('mots')) return false;
-      if (selectedCategory === 'whispers' && !post.trigger.toLowerCase().includes('chuchotement')) return false;
-      if (selectedCategory === 'tapping' && !post.trigger.toLowerCase().includes('tapping')) return false;
-      if (selectedCategory === 'rain' && !post.trigger.toLowerCase().includes('pluie') && !post.trigger.toLowerCase().includes('nature')) return false;
-      if (selectedCategory === 'care' && !post.trigger.toLowerCase().includes('soin')) return false;
+      if (selectedCategory === 'sleep' && !post.trigger?.toLowerCase().includes('sommeil')) return false;
+      if (selectedCategory === 'whispers' && !post.trigger?.toLowerCase().includes('chuchotement')) return false;
+      if (selectedCategory === 'tapping' && !post.trigger?.toLowerCase().includes('tapping')) return false;
+      if (selectedCategory === 'mouth' && !post.trigger?.toLowerCase().includes('bouche')) return false;
+      if (selectedCategory === 'care' && !post.trigger?.toLowerCase().includes('soin')) return false;
     }
 
-    // Tab filter
-    if (activeFilterTab === 'vip' && !post.isVipExclusive && post.author.badge !== 'vip-diamond') return false;
+    if (activeFilterTab === 'vip' && !post.isVipExclusive && post.author?.badge !== 'vip-diamond') return false;
 
     return true;
   });
@@ -118,7 +116,7 @@ export default function FeedView({
           >
             <span>{cat.icon}</span>
             <span>{cat.label}</span>
-            <span className="text-[10px] text-slate-400 opacity-60">({cat.count})</span>
+            <span className="text-[10px] text-slate-400 opacity-60">({posts.filter(p => cat.id === 'all' || p.trigger?.toLowerCase().includes(cat.id)).length})</span>
           </button>
         ))}
       </div>
@@ -165,22 +163,21 @@ export default function FeedView({
           </button>
         </div>
 
-        {/* Random button & Search input */}
+        {/* Action Button: Publish / Search */}
         <div className="flex items-center gap-2">
           <button
-            onClick={playRandomPost}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 text-xs font-medium flex items-center gap-1.5 transition-all shrink-0"
-            title="Écouter un vocal au hasard"
+            onClick={() => { onUiClick?.('tingle'); onOpenStudio?.(); }}
+            className="px-3.5 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-teal-500/20 shrink-0"
           >
-            <Shuffle className="w-3.5 h-3.5 text-teal-400" />
-            <span className="hidden sm:inline">Aléatoire</span>
+            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+            <span>Publier un son</span>
           </button>
 
-          <div className="relative w-full sm:w-48">
+          <div className="relative w-full sm:w-44">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Rechercher un son..."
+              placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#141926] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-slate-500 border border-white/10 focus:border-teal-500/50 focus:outline-none"
@@ -192,18 +189,29 @@ export default function FeedView({
       {/* Posts List */}
       <div className="space-y-4">
         {filteredPosts.length === 0 ? (
-          <div className="p-12 text-center rounded-3xl bg-[#0E121D] border border-white/5 space-y-3">
-            <Sparkles className="w-8 h-8 text-slate-500 mx-auto" />
-            <h3 className="font-bold text-white text-base">Aucun vocal ne correspond</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Essaie de changer de filtre ou clique sur "Tout explorer" pour retrouver tous les vocaux communautaires.
-            </p>
-            <button
-              onClick={() => { setSelectedCategory('all'); setSearchQuery(''); setActiveFilterTab('trending'); }}
-              className="px-4 py-2 rounded-xl bg-teal-500/20 text-teal-300 text-xs font-semibold border border-teal-500/30"
-            >
-              Réinitialiser les filtres
-            </button>
+          <div className="p-12 text-center rounded-3xl bg-gradient-to-b from-[#111625] to-[#0A0D15] border border-white/10 space-y-4 shadow-xl">
+            <div className="w-16 h-16 rounded-3xl bg-teal-500/15 border border-teal-500/30 text-teal-300 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-teal-500/10">
+              🎙️
+            </div>
+            
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <h3 className="font-bold text-white text-lg font-heading">
+                Le fil d'actualité est encore vierge
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Aucun faux contenu ici. Sois le tout premier visiteur réel à poser un vocal ou à importer un son audio pour lancer la communauté !
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => { onUiClick?.('tingle'); onOpenStudio?.(); }}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-teal-400 to-cyan-400 hover:from-teal-300 hover:to-cyan-300 text-slate-950 text-xs font-bold shadow-lg shadow-teal-500/25 transition-all transform active:scale-95 flex items-center gap-2 mx-auto"
+              >
+                <Mic className="w-4 h-4" />
+                <span>Enregistrer le premier vocal au micro</span>
+              </button>
+            </div>
           </div>
         ) : (
           filteredPosts.map(post => {
@@ -241,11 +249,10 @@ export default function FeedView({
                     />
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-sm text-white hover:underline cursor-pointer">
+                        <span className="font-bold text-sm text-white">
                           {post.author.name}
                         </span>
 
-                        {/* Author Badge */}
                         {post.author.badge === 'vip-diamond' && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 font-extrabold flex items-center gap-1 shadow-sm">
                             <Crown className="w-2.5 h-2.5 fill-slate-950" /> VIP
@@ -253,12 +260,7 @@ export default function FeedView({
                         )}
                         {post.author.badge === 'creator' && (
                           <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 font-semibold">
-                            Créateur Pro
-                          </span>
-                        )}
-                        {post.author.badge === 'beta' && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-semibold">
-                            Pionnier
+                            Créateur
                           </span>
                         )}
 
@@ -269,8 +271,12 @@ export default function FeedView({
 
                       <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
                         <span>{post.author.handle}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-600" />
-                        <span className="text-teal-400 font-medium">{post.author.level}</span>
+                        {post.refCode && (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-slate-600" />
+                            <span className="text-teal-400 font-mono text-[10px]">{post.refCode}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -302,33 +308,30 @@ export default function FeedView({
                       <span>{post.emoji}</span>
                       <span>{post.trigger}</span>
                     </span>
-                    {post.isVipExclusive && (
-                      <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center gap-1">
-                        🔒 Exclusivité VIP
-                      </span>
-                    )}
                   </div>
 
                   <h3 className="font-bold text-base sm:text-lg text-white leading-snug">
                     {post.title}
                   </h3>
 
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {post.description}
-                  </p>
+                  {post.description && (
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {post.description}
+                    </p>
+                  )}
                 </div>
 
                 {/* Audio Waveform Player Bar */}
                 <div className="p-4 rounded-2xl bg-[#090C14]/80 border border-white/5 mb-4 space-y-3">
                   <div className="flex items-center gap-4">
-                      {/* Play/Pause Button */}
-                      <button
-                        onClick={() => {
-                          onUiClick?.('pop');
-                          if (isPlaying) onPausePost(post.id);
-                          else onPlayPost(post);
-                        }}
-                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                    {/* Play/Pause Button */}
+                    <button
+                      onClick={() => {
+                        onUiClick?.('pop');
+                        if (isPlaying) onPausePost(post.id);
+                        else onPlayPost(post);
+                      }}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
                         isPlaying 
                           ? 'bg-gradient-to-tr from-teal-400 to-cyan-400 text-slate-950 shadow-lg shadow-teal-400/30 scale-105' 
                           : 'bg-gradient-to-tr from-white/10 to-white/5 text-white hover:bg-white/20'
@@ -344,7 +347,7 @@ export default function FeedView({
                     {/* Waveform Bars */}
                     <div className="flex-1 flex items-center gap-1 h-10 px-2 cursor-pointer select-none">
                       {post.waveform.map((barHeight, idx) => {
-                        const progressRatio = isPlaying ? (playbackProgress / 30) : 0;
+                        const progressRatio = isPlaying ? (playbackProgress / (post.durationSeconds || 30)) : 0;
                         const barRatio = idx / post.waveform.length;
                         const isPast = isPlaying && barRatio <= progressRatio;
 
@@ -366,7 +369,7 @@ export default function FeedView({
 
                     {/* Duration */}
                     <div className="text-xs font-mono font-bold text-slate-400 shrink-0">
-                      {isPlaying ? `${Math.round(playbackProgress)}s / 30s` : post.duration}
+                      {isPlaying ? `${Math.round(playbackProgress)}s` : post.duration}
                     </div>
                   </div>
 
@@ -410,7 +413,7 @@ export default function FeedView({
                       }`}
                     >
                       <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{post.comments.length}</span>
+                      <span>{post.comments?.length || 0}</span>
                       <span className="hidden sm:inline">Avis</span>
                     </button>
 
@@ -455,12 +458,12 @@ export default function FeedView({
                 {isCommentsOpen && (
                   <div className="mt-4 pt-4 border-t border-white/10 space-y-3 animate-in fade-in duration-200">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
-                      Commentaires de la communauté ({post.comments.length})
+                      Commentaires de la communauté ({post.comments?.length || 0})
                     </span>
 
                     {/* Comment List */}
                     <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
-                      {post.comments.map(c => (
+                      {post.comments?.map(c => (
                         <div key={c.id} className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-start gap-2.5">
                           <img src={c.avatar} alt={c.user} className="w-6 h-6 rounded-lg object-cover mt-0.5" />
                           <div className="flex-1 text-xs">
