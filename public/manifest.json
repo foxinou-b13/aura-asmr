@@ -1,0 +1,21 @@
+{
+  "short_name": "AURA ASMR",
+  "name": "AURA ASMR — Réseau Sensoriel & Binaural 3D",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=192&auto=format&fit=crop&q=80",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=512&auto=format&fit=crop&q=80",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#08090E",
+  "theme_color": "#08090E",
+  "display": "standalone",
+  "orientation": "portrait"
+}
