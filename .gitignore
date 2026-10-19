@@ -1,0 +1,4 @@
+# Ne JAMAIS publier ces fichiers
+node_modules/
+.env
+data.json
